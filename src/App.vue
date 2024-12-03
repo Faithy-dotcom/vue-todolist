@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h1>TODO</h1>
+    <h1>TODOLIST</h1>
     <h3>What needs to be done?</h3>
     <form @submit.prevent="addTask" class="task-form">
       <input 
