@@ -1,63 +1,69 @@
 <template>
-  <div>
+  <div class="container">
     <h1>TODO</h1>
     <h3>What needs to be done?</h3>
-    <form @submit.prevent="addTask">
-      <input v-model="newTaskName" placeholder="Enter a new task" required />
-      <button type="submit" style="width: 100%; height: 50%; background-color: black; color: white;">
+    <form @submit.prevent="addTask" class="task-form">
+      <input 
+        v-model="newTaskName" 
+        placeholder="Enter a new task" 
+        class="new-task-input" 
+        required 
+      />
+      <button type="submit" class="add-task-btn">
         Add Task
       </button>
     </form>
 
     <h3>{{ tasks.length }} tasks remaining</h3>
+    <p v-if="tasks.length >= 10" style="color: red;">Task limit reached. Please delete a task to add more.</p>
 
-    <ul style="list-style: none; padding: 0;">
+    <ul class="task-list">
       <li 
         v-for="task in tasks" 
         :key="task.id" 
-        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;"
+        class="task-item"
       >
         <!-- Checkbox -->
         <input 
           type="checkbox" 
           v-model="task.completed" 
-          style="margin-right: 10px;" 
+          class="task-checkbox" 
         />
 
         <!-- Task Name (Editable or Static) -->
-        <div v-if="editTaskId === task.id" style="flex: 1; margin-right: 10px;">
-          <input v-model="editTaskName" style="width: 100%;" />
+        <div v-if="editTaskId === task.id" class="edit-task">
+          <input v-model="editTaskName" class="edit-input" />
         </div>
-        <div v-else style="flex: 1; margin-right: 10px; text-decoration: task.completed ? 'line-through' : 'none';">
+        <div v-else class="task-name" :style="{ textDecoration: task.completed ? 'line-through' : 'none' }">
           {{ task.name }}
         </div>
 
         <!-- Action Buttons -->
-        <div style="display: flex; gap: 10px;">
+        <div class="action-buttons">
           <button 
             v-if="editTaskId === task.id" 
             @click="saveEdit(task)" 
-            style="background-color: green; color: white;"
+            class="save-btn"
           >
             Save
           </button>
           <button 
             v-if="editTaskId === task.id" 
             @click="cancelEdit" 
-            style="background-color: gray; color: white;"
+            class="cancel-btn"
           >
             Cancel
           </button>
           <button 
             v-else 
             @click="startEditing(task)" 
-            style="background-color: blue; color: white;"
+            class="edit-btn"
           >
             Edit
           </button>
           <button 
             @click="deleteTask(task)" 
-            style="background-color: red; color: white;"
+            class="delete-btn"
           >
             Delete
           </button>
@@ -66,6 +72,7 @@
     </ul>
   </div>
 </template>
+
 
 <script>
 import { ref } from 'vue';
@@ -79,6 +86,10 @@ export default {
 
     // Add a new task
     const addTask = () => {
+      if (tasks.value.length >= 10) {
+        alert('You can only have up to 10 tasks at a time.');
+        return;
+      }
       if (!newTaskName.value.trim()) return;
       tasks.value.push({
         id: Date.now(), // Unique ID
@@ -97,7 +108,8 @@ export default {
 
     // Save the edited task
     const saveEdit = (task) => {
-      task.name = editTaskName.value;
+      task.name = editTaskName.value.trim();
+      if (!task.name) return alert('Task name cannot be empty.');
       editTaskId.value = null;
       editTaskName.value = '';
       saveTasks();
@@ -135,36 +147,110 @@ export default {
 };
 </script>
 
-<style>
-h1, h3 {
+
+<style scoped>
+.container {
+  max-width: 500px;
+  margin: 0 auto; /* Center the container */
   text-align: center;
 }
 
-input {
-  padding: 10px;
-  border: 2px solid #ccc;
-  border-radius: 5px;
-  width: 100%;
+.task-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
-button {
-  padding: 5px 10px;
+.new-task-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.add-task-btn {
+  width: 100%;
+  height: 50px;
+  background-color: black;
+  color: white;
   border: none;
   border-radius: 5px;
+  font-size: 16px;
   cursor: pointer;
 }
 
-ul {
+.task-list {
   list-style: none;
   padding: 0;
+  margin-top: 20px;
 }
 
-li {
+.task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
-  margin-top: 5px;
-  display: flex;
-  align-items: center;
+}
+
+.task-checkbox {
+  margin-right: 10px;
+}
+
+.task-name {
+  flex: 1;
+  margin-right: 10px;
+}
+
+.edit-task {
+  flex: 1;
+  margin-right: 10px;
+}
+
+.edit-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #6c63ff; /* Highlight border */
+  border-radius: 8px;
+  background-color: #f4f4f4;
+  font-size: 16px;
+}
+
+.edit-input:focus {
+  border-color: #4c4cff;
+  box-shadow: 0 0 5px rgba(0, 0, 255, 0.5);
+}
+
+.action-buttons button {
+  margin-left: 5px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.save-btn {
+  background-color: green;
+  color: white;
+}
+
+.cancel-btn {
+  background-color: gray;
+  color: white;
+}
+
+.edit-btn {
+  background-color: blue;
+  color: white;
+}
+
+.delete-btn {
+  background-color: red;
+  color: white;
 }
 </style>
