@@ -4,149 +4,167 @@
     <h3>What needs to be done?</h3>
     <form @submit.prevent="addTask">
       <input v-model="newTaskName" placeholder="Enter a new task" required />
-    <button type="submit" style="width: 100%; height: 50%; background-color: black; color: white;">Add Task</button>
-
+      <button type="submit" style="width: 100%; height: 50%; background-color: black; color: white;">
+        Add Task
+      </button>
     </form>
-    <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px;">
-  <button @click="filter = 'all'">All</button>
-  <button @click="filter = 'completed'">Completed</button>
-  <button @click="filter = 'incomplete'">Incomplete</button>
-</div>
 
-    <ul>
-      <li v-for="task in filteredTasks" :key="task.id" :class="['task', task.status]" :style="{ backgroundColor: getStatusColor(task.status) }">
-        {{ task.name }} ({{ task.status }})
-        <button @click="toggleCompletion(task)">Toggle Completion</button>
-        <button @click="markAsCompleted(task)" v-if="task.status !== 'completed'">Mark as Completed</button>
-        <button @click="deleteTask(task)">Delete</button>
+    <h3>{{ tasks.length }} tasks remaining</h3>
+
+    <ul style="list-style: none; padding: 0;">
+      <li 
+        v-for="task in tasks" 
+        :key="task.id" 
+        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;"
+      >
+        <!-- Checkbox -->
+        <input 
+          type="checkbox" 
+          v-model="task.completed" 
+          style="margin-right: 10px;" 
+        />
+
+        <!-- Task Name (Editable or Static) -->
+        <div v-if="editTaskId === task.id" style="flex: 1; margin-right: 10px;">
+          <input v-model="editTaskName" style="width: 100%;" />
+        </div>
+        <div v-else style="flex: 1; margin-right: 10px; text-decoration: task.completed ? 'line-through' : 'none';">
+          {{ task.name }}
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 10px;">
+          <button 
+            v-if="editTaskId === task.id" 
+            @click="saveEdit(task)" 
+            style="background-color: green; color: white;"
+          >
+            Save
+          </button>
+          <button 
+            v-if="editTaskId === task.id" 
+            @click="cancelEdit" 
+            style="background-color: gray; color: white;"
+          >
+            Cancel
+          </button>
+          <button 
+            v-else 
+            @click="startEditing(task)" 
+            style="background-color: blue; color: white;"
+          >
+            Edit
+          </button>
+          <button 
+            @click="deleteTask(task)" 
+            style="background-color: red; color: white;"
+          >
+            Delete
+          </button>
+        </div>
       </li>
     </ul>
   </div>
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue';
+import { ref } from 'vue';
 
 export default {
   setup() {
     const newTaskName = ref('');
     const tasks = ref([]);
-    const filter = ref('all');
+    const editTaskId = ref(null); // Tracks the ID of the task being edited
+    const editTaskName = ref(''); // Holds the name of the task being edited
 
-    
-    onMounted(() => {
-      const storedTasks = localStorage.getItem('tasks');
-      if (storedTasks) {
-        tasks.value = JSON.parse(storedTasks);
-      }
-    });
-
-    const filteredTasks = computed(() => {
-      switch (filter.value) {
-        case 'all':
-          return tasks.value;
-        case 'completed':
-          return tasks.value.filter(task => task.status === 'completed');
-        case 'incomplete':
-          return tasks.value.filter(task => task.status !== 'completed');
-        default:
-          return tasks.value;
-      }
-    });
-
+    // Add a new task
     const addTask = () => {
-      if (newTaskName.value.trim() === '') return; 
-      const newTask = {
-        id: tasks.value.length + 1, 
+      if (!newTaskName.value.trim()) return;
+      tasks.value.push({
+        id: Date.now(), // Unique ID
         name: newTaskName.value,
-        status: 'pending' 
-      };
-      tasks.value.push(newTask);
-      newTaskName.value = ''; 
-      saveTasks(); 
+        completed: false, // Checkbox for completion
+      });
+      newTaskName.value = '';
+      saveTasks();
     };
 
-    const toggleCompletion = (task) => {
-      task.status = task.status === 'completed' ? 'pending' : 'completed';
-      saveTasks(); 
+    // Start editing a task
+    const startEditing = (task) => {
+      editTaskId.value = task.id;
+      editTaskName.value = task.name;
     };
 
-    const markAsCompleted = (task) => {
-      task.status = 'completed';
-      saveTasks(); 
+    // Save the edited task
+    const saveEdit = (task) => {
+      task.name = editTaskName.value;
+      editTaskId.value = null;
+      editTaskName.value = '';
+      saveTasks();
     };
 
+    // Cancel editing
+    const cancelEdit = () => {
+      editTaskId.value = null;
+      editTaskName.value = '';
+    };
+
+    // Delete a task
     const deleteTask = (task) => {
-      tasks.value = tasks.value.filter(t => t.id !== task.id); 
-      saveTasks(); 
+      tasks.value = tasks.value.filter(t => t.id !== task.id);
+      saveTasks();
     };
 
+    // Save tasks to local storage
     const saveTasks = () => {
       localStorage.setItem('tasks', JSON.stringify(tasks.value));
-    };
-
-    const getStatusColor = (status) => {
-      switch (status) {
-        case 'pending':
-          return '#FFC5C5'; 
-        case 'in progress':
-          return '#FFFFCC'; 
-        case 'completed':
-          return '#C6F4C6'; 
-        default:
-          return '#FFFFFF'; 
-      }
     };
 
     return {
       newTaskName,
       tasks,
-      filter,
-      filteredTasks,
+      editTaskId,
+      editTaskName,
       addTask,
-      toggleCompletion,
-      markAsCompleted,
+      startEditing,
+      saveEdit,
+      cancelEdit,
       deleteTask,
-      getStatusColor
     };
-  }
-}
+  },
+};
 </script>
 
 <style>
-.task {
+h1, h3 {
+  text-align: center;
+}
+
+input {
   padding: 10px;
-  border: 1px solid;
-  margin-bottom: 10px;
-  
-  
-}
-
-.pending {
-  border-color: red;
-}
-
-.in-progress {
-  border-color: yellow;
-}
-
-.completed {
-  border-color: green;
-}
-h1{
-  text-align: center;
-}
-h3{
-  text-align: center;
-}
-input{
-  border: 3px solid ;
+  border: 2px solid #ccc;
+  border-radius: 5px;
   width: 100%;
-  height: 50px ;
 }
-button type{
-  width: 50%;
+
+button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
 }
 </style>
-
-
